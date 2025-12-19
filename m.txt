@@ -1,0 +1,77 @@
+
+#include <reg51.h>
+#include <intrins.h>
+#include "STC32G.h"
+#include "config.h"
+#include "led.h"
+#include "lcd.h"
+#include "key.h"
+#include "relay.h"
+#include "uart4.h"
+
+extern void LCD_HandleKey(unsigned char key);
+extern void ShowSlaveCount(void);  // 新增：显示从站数函数
+
+void main() {
+    unsigned char key;
+    static unsigned char key4_pressed = 0;
+    static unsigned int key4_press_time = 0;
+
+    // 初始化外设
+    GPIO_Init(); 
+    Timer0_Init();
+    relay_init();
+    led_all_off();
+    UART4_Init(9600);
+    LCD_Init();
+    LCD_Delay(100);
+    led_on(5);
+    LCD_Delay(50);
+    UART4_SendString("System Ready.\r\n");
+    UART4_SendString("Key4 Short:Show Slaves Count\r\n");
+    
+    while(1) {
+        key_scan();               // 扫描按键
+        key = Key_GetValue();     // 获取按键值
+        UART4_ReceiveString();    // 处理串口数据并刷新页面
+        
+        // 按键1/2控制翻页
+        if (key == 1 || key == 2) {
+            LCD_HandleKey(key);
+        } 
+        // 按键3控制LED
+        else if (key == 3) {
+            led_toggle(3);
+        }
+        // 按键4检测
+        else if (key == 4) {
+            key4_pressed = 1;
+            key4_press_time = 0;
+        }
+        
+        // 处理按键4的短按检测
+        if (key4_pressed) {
+            key4_press_time++;
+            
+            // 短按检测：按下后立即执行，但防止抖动
+            if (key4_press_time == 5) {  // 约50ms消抖后执行
+                ShowSlaveCount();  // 显示从站数
+            }
+            
+            // 检查按键是否释放
+            if (P00 == 1) {  // KEY4_PIN释放（高电平）
+                key4_pressed = 0;
+                key4_press_time = 0;
+            }
+            
+            // 防止长按重复触发
+            if (key4_press_time > 100) {  // 长按超过1秒，重置
+                key4_pressed = 0;
+                key4_press_time = 0;
+            }
+            
+            LCD_Delay(10);  // 延时10ms
+        }
+    }
+}
+
