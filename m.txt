@@ -40,12 +40,7 @@ void main() {
             LCD_HandleKey(key);
         } 
      
-        // 按键4检测
-        else if (key == 4) {
-            key4_pressed = 1;
-            key4_press_time = 0;
-        }
-        
+      
         // 处理按键4的短按检测
         if (key4_pressed) {
             key4_press_time++;
