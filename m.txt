@@ -57,10 +57,7 @@ void main() {
             }
             
             // 防止长按重复触发
-            if (key4_press_time > 100) {  // 长按超过1秒，重置
-                key4_pressed = 0;
-                key4_press_time = 0;
-            }
+          
             
             LCD_Delay(10);  // 延时10ms
         }
